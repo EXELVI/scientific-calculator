@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scientific Calculator</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.5.0/math.min.js"></script>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <link rel="stylesheet" href="prism/prism.css">
+  <style>
+    body {
+      padding: 20px;
+    }
+
+    #result {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Scientific Calculator</h1>
+    <div class="mb-3">
+      <label for="expression" class="form-label">Enter your expression</label>
+      <input type="text" class="form-control" id="expression" placeholder="e.g., sqrt(16) + sin(45 deg)">
+    </div>
+    <div class="mb-3">
+      <label for="mode" class="form-label">Mode</label>
+      <select class="form-select" aria-label="Mode">
+        <option selected value="basic">Basic</option>
+        <option value="algebra">Algebra</option>
+        <option value="fraction">Fraction</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="calculate()">Calculate</button>
+
+    <div id="result" class="alert alert-info" role="alert">
+      Result will appear here.
+    </div>
+
+    <mspace width="1em" id="formattedResult">
+
+    </mspace>
+
+    <ul class="list-group" id="results">
+
+    </ul>
+
+    
+  </div>
+
+  <div class="modal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Result</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <pre id="resultShow"></pre>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("expression").addEventListener("keyup", function(event) {
+      if (event.key === "Enter") {
+        calculate();
+      }
+    });
+
+    let results = {};
+    let resultsType = [
+      "text",
+      "latex",
+      "mathml",
+      "asciimath"
+    ]
+    let resultFormmat = [
+      "Text",
+      "LaTeX",
+      "MathML",
+      "AsciiMath"
+    ]
+
+    function calculate() {
+      const expression = document.getElementById('expression').value;
+      try {
+        let result;
+
+        const mode = document.querySelector('select').value;
+
+        switch (mode) {
+          case '  basic':
+            result = math.evaluate(expression);
+            break;
+          case 'algebra':
+            result = math.simplify(expression);
+            break;
+          case 'fraction':
+            result = math.format(math.evaluate(expression), {
+              fraction: 'ratio'
+            });
+            break;
+
+          default:
+            result = math.evaluate(expression);
+        }
+
+
+        document.getElementById('result').innerHTML = `Result: ${result}`;
+
+        document.getElementById('formattedResult').textContent = MathJax.tex2mml(result);
+
+        document.getElementById('results').innerHTML = '';
+
+        for (let i = 0; i < resultsType.length; i++) {
+          const type = resultsType[i];
+
+          const rsl = math.parse(expression).toString({
+            format: type,
+            parenthesis: 'auto',
+            implicit: 'hide'
+          });
+
+
+          switch (type) {
+            case 'mathml':
+              results[type] = MathJax.tex2mml(rsl + "=" + result);
+              break;
+            case 'asciimath':
+              results[type] = rsl + "=" + result;
+              break;
+            default:
+              results[type] = rsl + "=" + result;
+          }
+
+          const li = document.createElement('li');
+          li.classList.add('list-group-item', 'd-flex', 'justify-content-between');
+          const span = document.createElement('span');
+          span.textContent = resultFormmat[i];
+          li.appendChild(span);
+          const div = document.createElement('div');
+          const buttonShow = document.createElement('button');
+          buttonShow.classList.add('btn', 'btn-primary', 'btn-sm');
+          buttonShow.textContent = 'Show';
+          buttonShow.addEventListener('click', function() {
+            document.getElementById('resultShow').textContent = results[type];
+            Prism.highlightElement(document.getElementById('resultShow'));
+            var myModal = new bootstrap.Modal(document.querySelector('.modal'));
+            myModal.show();
+          });
+          div.appendChild(buttonShow);
+          const buttonCopy = document.createElement('button');
+          buttonCopy.classList.add('btn', 'btn-secondary', 'btn-sm');
+          buttonCopy.textContent = 'Copy';
+          buttonCopy.addEventListener('click', function() {
+            navigator.clipboard.writeText(results[type]);
+          });
+          div.appendChild(buttonCopy);
+          li.appendChild(div);
+          document.getElementById('results').appendChild(li);
+          
+        }
+
+      } catch (err) {
+        console.log(err);
+        document.getElementById('result').innerHTML = `Error: ${err.message}`;
+      }
+    }
+  </script>
+
+<script src="prism/prism.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+</body>
+
+</html>
