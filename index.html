@@ -42,18 +42,20 @@
       Result will appear here.
     </div>
 
+   <div class="mb-3">
     <mspace width="1em" id="formattedResult">
 
     </mspace>
+  </div>
 
     <ul class="list-group" id="results">
 
     </ul>
 
-    
+
   </div>
 
-  <div class="modal" tabindex="-1">
+  <div class="modal fade" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -61,7 +63,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <pre id="resultShow"></pre>
+          <pre id="resultShow" class="language-mathml"></pre>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -79,14 +81,14 @@
 
     let results = {};
     let resultsType = [
-      "text",
-      "latex",
+      //"text",
+     // "latex",
       "mathml",
       "asciimath"
     ]
     let resultFormmat = [
-      "Text",
-      "LaTeX",
+      //"Text",
+      //"LaTeX",
       "MathML",
       "AsciiMath"
     ]
@@ -118,7 +120,15 @@
 
         document.getElementById('result').innerHTML = `Result: ${result}`;
 
-        document.getElementById('formattedResult').textContent = MathJax.tex2mml(result);
+        MathJax.typesetPromise().then(() => {
+          
+        
+          document.getElementById('formattedResult').innerHTML = MathJax.tex2mml(expression + "=" + result);
+
+          MathJax.typesetPromise();
+        });
+
+        
 
         document.getElementById('results').innerHTML = '';
 
@@ -149,6 +159,7 @@
           span.textContent = resultFormmat[i];
           li.appendChild(span);
           const div = document.createElement('div');
+          div.classList.add('btn-group');
           const buttonShow = document.createElement('button');
           buttonShow.classList.add('btn', 'btn-primary', 'btn-sm');
           buttonShow.textContent = 'Show';
@@ -168,7 +179,7 @@
           div.appendChild(buttonCopy);
           li.appendChild(div);
           document.getElementById('results').appendChild(li);
-          
+
         }
 
       } catch (err) {
@@ -178,7 +189,7 @@
     }
   </script>
 
-<script src="prism/prism.js"></script>
+  <script src="prism/prism.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 
