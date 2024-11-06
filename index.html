@@ -5,11 +5,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Scientific Calculator</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.5.0/math.min.js"></script>
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
   <link rel="stylesheet" href="prism/prism.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <style>
     body {
       padding: 20px;
@@ -22,19 +24,28 @@
 </head>
 
 <body>
+  <div class="position-absolute top-0 end-0 m-2">
+    <button id="darkMode" class="btn btn-dark">Dark</button>
+  </div>
+
   <div class="container">
     <h1>Scientific Calculator</h1>
     <div class="mb-3">
       <label for="expression" class="form-label">Enter your expression</label>
       <input type="text" class="form-control" id="expression" placeholder="e.g., sqrt(16) + sin(45 deg)">
     </div>
-    <div class="mb-3">
+    <div class="mb-3 form-group">
       <label for="mode" class="form-label">Mode</label>
       <select class="form-select" aria-label="Mode">
         <option selected value="basic">Basic</option>
         <option value="algebra">Algebra</option>
         <option value="fraction">Fraction</option>
+        <option value="trigonometry">Trigonometry</option>
+        <option value="logarithm">Logarithm</option>
       </select>
+      <label for="precision">Decimal Places</label>
+      <input type="number" id="precision" class="form-control" placeholder="e.g., 2">
+
     </div>
     <button class="btn btn-primary" onclick="calculate()">Calculate</button>
 
@@ -42,18 +53,30 @@
       Result will appear here.
     </div>
 
-   <div class="mb-3">
-    <mspace width="1em" id="formattedResult">
+    <div class="mb-3">
+      <mspace width="1em" id="formattedResult">
 
-    </mspace>
-  </div>
+      </mspace>
+    </div>
 
     <ul class="list-group" id="results">
 
     </ul>
 
+    <div id="history" class="border p-3 rounded shadow mt-3">
+      <div class="d-flex justify-content-between mb-2">
+        <h4>History</h4>
+        <button class="btn btn-danger" onclick="localStorage.removeItem('history'); hist = []; updateHistory();"><i
+            class="bi bi-trash"></i></button>
+      </div>
+      <ul id="historyList" class="list-group">
+        <!-- Storico delle operazioni -->
+      </ul>
+    </div>
+
 
   </div>
+
 
   <div class="modal fade" tabindex="-1">
     <div class="modal-dialog">
@@ -73,7 +96,34 @@
   </div>
 
   <script>
-    document.getElementById("expression").addEventListener("keyup", function(event) {
+
+    var hist = [];
+
+    if (localStorage.getItem('history')) {
+      hist = JSON.parse(localStorage.getItem('history'));
+      if (!Array.isArray(hist)) {
+        hist = [];
+      }
+    }
+
+    function updateHistory() {
+      let historyList = document.getElementById('historyList');
+      historyList.innerHTML = '';
+      hist.forEach((item, index) => {
+        let li = document.createElement('li');
+        li.innerHTML = `<strong>${item.expr}</strong> = ${item.result}`;
+        li.classList = 'list-group-item';
+        li.addEventListener('click', function () { 
+          document.getElementById('expression').value = item.expr;
+          calculate(true);
+        });
+        li.style.cursor = 'pointer';
+        historyList.appendChild(li);
+      });
+      localStorage.setItem('history', JSON.stringify(hist));
+    }
+
+    document.getElementById("expression").addEventListener("keyup", function (event) {
       if (event.key === "Enter") {
         calculate();
       }
@@ -82,7 +132,7 @@
     let results = {};
     let resultsType = [
       //"text",
-     // "latex",
+      // "latex",
       "mathml",
       "asciimath"
     ]
@@ -93,15 +143,15 @@
       "AsciiMath"
     ]
 
-    function calculate() {
+    function calculate(dontaddToHistory) {
       const expression = document.getElementById('expression').value;
       try {
         let result;
 
         const mode = document.querySelector('select').value;
-
+ 
         switch (mode) {
-          case '  basic':
+          case 'basic':
             result = math.evaluate(expression);
             break;
           case 'algebra':
@@ -112,23 +162,32 @@
               fraction: 'ratio'
             });
             break;
-
+          case 'trigonometry':
+            result = math.sin(math.evaluate(expression));
+            break;
+          case 'logarithm':
+            result = math.log(math.evaluate(expression));
+            break;
           default:
             result = math.evaluate(expression);
         }
 
-
-        document.getElementById('result').innerHTML = `Result: ${result}`;
+        const precision = document.getElementById('precision').value;
+        if (precision) {
+          result = math.format(result, { precision: parseInt(precision) });
+        } else {
+          document.getElementById('result').innerHTML = `Result: ${result}`;
+        }
 
         MathJax.typesetPromise().then(() => {
-          
-        
+
+
           document.getElementById('formattedResult').innerHTML = MathJax.tex2mml(expression + "=" + result);
 
           MathJax.typesetPromise();
         });
 
-        
+
 
         document.getElementById('results').innerHTML = '';
 
@@ -163,7 +222,7 @@
           const buttonShow = document.createElement('button');
           buttonShow.classList.add('btn', 'btn-primary', 'btn-sm');
           buttonShow.textContent = 'Show';
-          buttonShow.addEventListener('click', function() {
+          buttonShow.addEventListener('click', function () {
             document.getElementById('resultShow').textContent = results[type];
             Prism.highlightElement(document.getElementById('resultShow'));
             var myModal = new bootstrap.Modal(document.querySelector('.modal'));
@@ -173,7 +232,7 @@
           const buttonCopy = document.createElement('button');
           buttonCopy.classList.add('btn', 'btn-secondary', 'btn-sm');
           buttonCopy.textContent = 'Copy';
-          buttonCopy.addEventListener('click', function() {
+          buttonCopy.addEventListener('click', function () {
             navigator.clipboard.writeText(results[type]);
           });
           div.appendChild(buttonCopy);
@@ -182,15 +241,70 @@
 
         }
 
+        if (!dontaddToHistory) {
+          if (result != undefined && !hist.find(item => item.expr == expression)) {
+            hist.push({
+              expr: expression,
+              result: result
+            });
+          }
+          updateHistory();
+        }
+
+
       } catch (err) {
         console.log(err);
         document.getElementById('result').innerHTML = `Error: ${err.message}`;
       }
     }
+
+    window.addEventListener('load', function () {
+      updateHistory();
+
+      function changeTheme(theme) {
+        var themeButton = document.getElementById('darkMode');
+        if (!theme) {
+          var temaaaStorage = localStorage.getItem('theme');
+          if (temaaaStorage != "dark") {
+            document.body.setAttribute('data-bs-theme', "dark");
+            localStorage.setItem('theme', "dark");
+          }
+          else {
+            document.body.setAttribute('data-bs-theme', "light");
+            localStorage.setItem('theme', "light")
+          }
+        } else if (theme === 'dark' || theme === 'light') {
+          document.body.setAttribute('data-bs-theme', theme);
+          localStorage.setItem('theme', theme);
+          themeButton.innerHTML = theme === 'dark' ? "<div><i class=\"bi bi-sun-fill\"></i></div>" : "<div><i class=\"bi bi-moon-stars-fill\"></i></div>";
+          themeButton.classList = theme === 'dark' ? "btn btn-light" : "btn btn-dark";
+        }
+        const themeS = localStorage.getItem('theme');
+        for (let i = 0; i < 720; i++) {
+          setTimeout(() => {
+            document.querySelector('#darkMode div').style.transform = `rotate(${i}deg)`;
+            if (i == 360) {
+              themeButton.innerHTML = themeS === 'dark' ? "<div><i class=\"bi bi-sun-fill\"></i></div>" : "<div><i class=\"bi bi-moon-stars-fill\"></i></div>";
+              themeButton.classList = themeS === 'dark' ? "btn btn-light" : "btn btn-dark";
+            }
+          }, i * 1);
+        }
+      }
+
+      const theme = localStorage.getItem('theme');
+      changeTheme(theme);
+
+      document.getElementById('darkMode').addEventListener('click', () => {
+        changeTheme();
+      });
+
+    });
   </script>
 
   <script src="prism/prism.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+    crossorigin="anonymous"></script>
 </body>
 
 </html>
