@@ -5,8 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Scientific Calculator</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-    integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.5.0/math.min.js"></script>
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -20,14 +19,43 @@
     #result {
       margin-top: 10px;
     }
+
+    .virtual-keyboard {
+      position: absolute;
+      display: none;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+      z-index: 1000;
+      resize: both;
+      overflow: hidden;
+    }
+
+    .virtual-keyboard button {
+      margin: 5px;
+    }
   </style>
 </head>
 
 <body>
-  <div class="position-absolute top-0 end-0 m-2">
-    <button id="darkMode" class="btn btn-dark">Dark</button>
+  <div class="position-absolute top-0 end-0 m-2 d-flex gap-2">
+    <button id="darkMode" class="btn btn-dark"><i class="bi bi-moon-stars-fill"></i></button>
+    <button id="keyboardToggle" class="btn btn-secondary"><i class="bi bi-keyboard"></i></button>
   </div>
 
+
+  <div id="virtualKeyboard" class="virtual-keyboard bg-secondary">
+    <button class="btn btn-light" onclick="insertSymbol('sqrt(')">√</button>
+    <button class="btn btn-light" onclick="insertSymbol('sin(')">sin</button>
+    <button class="btn btn-light" onclick="insertSymbol('cos(')">cos</button>
+    <button class="btn btn-light" onclick="insertSymbol('tan(')">tan</button>
+    <button class="btn btn-light" onclick="insertSymbol('log(')">log</button>
+    <button class="btn btn-light" onclick="insertSymbol('pi')">π</button>
+    <button class="btn btn-light" onclick="insertSymbol('e')">e</button>
+    <button class="btn btn-light" onclick="insertSymbol('^')">^</button>
+  </div>
+  
+   
   <div class="container">
     <h1>Scientific Calculator</h1>
     <div class="mb-3">
@@ -66,8 +94,7 @@
     <div id="history" class="border p-3 rounded shadow mt-3">
       <div class="d-flex justify-content-between mb-2">
         <h4>History</h4>
-        <button class="btn btn-danger" onclick="localStorage.removeItem('history'); hist = []; updateHistory();"><i
-            class="bi bi-trash"></i></button>
+        <button class="btn btn-danger" onclick="localStorage.removeItem('history'); hist = []; updateHistory();"><i class="bi bi-trash"></i></button>
       </div>
       <ul id="historyList" class="list-group">
         <!-- Storico delle operazioni -->
@@ -96,7 +123,6 @@
   </div>
 
   <script>
-
     var hist = [];
 
     if (localStorage.getItem('history')) {
@@ -113,7 +139,7 @@
         let li = document.createElement('li');
         li.innerHTML = `<strong>${item.expr}</strong> = ${item.result}`;
         li.classList = 'list-group-item';
-        li.addEventListener('click', function () { 
+        li.addEventListener('click', function() {
           document.getElementById('expression').value = item.expr;
           calculate(true);
         });
@@ -123,7 +149,7 @@
       localStorage.setItem('history', JSON.stringify(hist));
     }
 
-    document.getElementById("expression").addEventListener("keyup", function (event) {
+    document.getElementById("expression").addEventListener("keyup", function(event) {
       if (event.key === "Enter") {
         calculate();
       }
@@ -149,7 +175,7 @@
         let result;
 
         const mode = document.querySelector('select').value;
- 
+
         switch (mode) {
           case 'basic':
             result = math.evaluate(expression);
@@ -174,7 +200,9 @@
 
         const precision = document.getElementById('precision').value;
         if (precision) {
-          result = math.format(result, { precision: parseInt(precision) });
+          result = math.format(result, {
+            precision: parseInt(precision)
+          });
         } else {
           document.getElementById('result').innerHTML = `Result: ${result}`;
         }
@@ -222,7 +250,7 @@
           const buttonShow = document.createElement('button');
           buttonShow.classList.add('btn', 'btn-primary', 'btn-sm');
           buttonShow.textContent = 'Show';
-          buttonShow.addEventListener('click', function () {
+          buttonShow.addEventListener('click', function() {
             document.getElementById('resultShow').textContent = results[type];
             Prism.highlightElement(document.getElementById('resultShow'));
             var myModal = new bootstrap.Modal(document.querySelector('.modal'));
@@ -232,7 +260,7 @@
           const buttonCopy = document.createElement('button');
           buttonCopy.classList.add('btn', 'btn-secondary', 'btn-sm');
           buttonCopy.textContent = 'Copy';
-          buttonCopy.addEventListener('click', function () {
+          buttonCopy.addEventListener('click', function() {
             navigator.clipboard.writeText(results[type]);
           });
           div.appendChild(buttonCopy);
@@ -258,7 +286,7 @@
       }
     }
 
-    window.addEventListener('load', function () {
+    window.addEventListener('load', function() {
       updateHistory();
 
       function changeTheme(theme) {
@@ -268,8 +296,7 @@
           if (temaaaStorage != "dark") {
             document.body.setAttribute('data-bs-theme', "dark");
             localStorage.setItem('theme', "dark");
-          }
-          else {
+          } else {
             document.body.setAttribute('data-bs-theme', "light");
             localStorage.setItem('theme', "light")
           }
@@ -299,12 +326,48 @@
       });
 
     });
+    const keyboard = document.getElementById('virtualKeyboard');
+    const keyboardToggle = document.getElementById('keyboardToggle');
+
+    keyboardToggle.addEventListener('click', () => {
+      keyboard.style.display = keyboard.style.display === 'none' ? 'block' : 'none';
+    });
+
+    function insertSymbol(symbol) {
+      const expressionInput = document.getElementById('expression');
+      expressionInput.value += symbol;
+      expressionInput.focus();
+    }
+
+    keyboard.onmousedown = function(event) {
+      let shiftX = event.clientX - keyboard.getBoundingClientRect().left;
+      let shiftY = event.clientY - keyboard.getBoundingClientRect().top;
+
+      function moveAt(pageX, pageY) {
+        keyboard.style.left = pageX - shiftX + 'px';
+        keyboard.style.top = pageY - shiftY + 'px';
+      }
+
+      function onMouseMove(event) {
+        moveAt(event.pageX, event.pageY);
+      }
+
+      document.addEventListener('mousemove', onMouseMove);
+
+      keyboard.onmouseup = function() {
+        document.removeEventListener('mousemove', onMouseMove);
+        keyboard.onmouseup = null;
+      };
+    };
+
+    keyboard.ondragstart = function() {
+      return false;
+    };
+
   </script>
 
   <script src="prism/prism.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 
 </html>
